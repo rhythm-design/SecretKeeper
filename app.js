@@ -27,7 +27,8 @@ mongoose.set("useCreateIndex",true);
 const userSchema=new mongoose.Schema({
   email:String,
   password:String,
-  googleId:String
+  googleId:String,
+  secret: String
 },{versionKey: false});
 
 userSchema.plugin(passportLocalMongoose);
@@ -46,6 +47,7 @@ const User=new mongoose.model("User",userSchema);
    });
  });
 
+// Passport Google Strategy->
  passport.use(new GoogleStrategy({
      clientID: process.env.CLIENT_ID,
      clientSecret: process.env.CLIENT_SECRET,
@@ -59,6 +61,19 @@ const User=new mongoose.model("User",userSchema);
      });
    }
  ));
+
+ // Passport FaceBook Strategy ->
+//  passport.use(new FacebookStrategy({
+//     clientID: FACEBOOK_APP_ID,
+//     clientSecret: FACEBOOK_APP_SECRET,
+//     callbackURL: "http://localhost:3000/auth/facebook/secretkeeper"
+//   },
+//   function(accessToken, refreshToken, profile, cb) {
+//     User.findOrCreate({ facebookId: profile.id }, function (err, user) {
+//       return cb(err, user);
+//     });
+//   }
+// ));
 app.get("/",function(req,res){
   res.render("home");
 });
@@ -80,11 +95,38 @@ app.get("/register",function(req,res){
   res.render("register");
 });
 app.get("/secrets",function(req,res){
+  User.find({"secret":{$ne:null}},function(err,foundUsers){
+    if(err){
+      console.log(err);
+    }else{
+      if(foundUsers){
+        res.render("secrets",{usersWithSecrets: foundUsers});
+      }
+    }
+  });
+});
+app.get("/submit",function(req,res){
   if(req.isAuthenticated()){
-    res.render("secrets");
+    res.render("submit");
   }else{
     res.redirect("/login");
   }
+});
+app.post("/submit",function(req,res){
+  const submittedSecret=req.body.secret;
+  console.log(req.user.id);
+  User.findById(req.user.id,function(err,foundUser){
+    if(err){
+      console.log(err);
+    }else{
+      if(foundUser){
+        foundUser.secret=submittedSecret;
+        foundUser.save(function(){
+          res.redirect("/secrets");
+        });
+      }
+    }
+  });
 });
 app.get("/logout",function(req,res){
   req.logout();
