@@ -3,7 +3,6 @@ const bodyParser=require("body-parser");
 const ejs=require("ejs");
 const mongoose=require("mongoose");
 
-// Advanced security using passport->
 const session=require("express-session");
 const passport=require("passport");
 const passportLocalMongoose=require("passport-local-mongoose");
@@ -51,7 +50,10 @@ app.get("/secrets",function(req,res){
     res.redirect("/login");
   }
 });
-
+app.get("/logout",function(req,res){
+  req.logout();
+  res.redirect("/");
+});
 app.post("/register",function(req,res){
   User.register({username:req.body.username},req.body.password,function(err, foundUser){
     if(err){
